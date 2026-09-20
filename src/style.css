@@ -1,0 +1,21 @@
+:root { font-family: Inter, "PingFang SC", "Microsoft YaHei", sans-serif; color: #302b27; background: #f7f4ef; }
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 320px; }
+button { font: inherit; }
+.app-shell { display: grid; grid-template-columns: minmax(280px, 35%) 1fr; min-height: 100vh; }
+.panel { padding: 52px 40px; background: #fffdf9; border-right: 1px solid #e9e1d7; }
+.eyebrow { margin: 0 0 12px; color: #a56a50; letter-spacing: .12em; font-size: 11px; font-weight: 700; }
+h1 { margin: 0; font-size: 36px; line-height: 1.2; letter-spacing: -.04em; }
+.intro { margin: 12px 0 42px; color: #766e66; font-size: 15px; }
+.field { display: flex; justify-content: space-between; padding: 13px 0; border-top: 1px solid #eee7df; border-bottom: 1px solid #eee7df; color: #766e66; font-size: 14px; }
+.field strong { color: #302b27; }
+.label { margin: 28px 0 12px; font-size: 13px; color: #766e66; }
+.place-list { padding: 0; margin: 0; list-style: none; }
+.place-list li { display: flex; align-items: center; justify-content: space-between; padding: 13px 0; border-bottom: 1px solid #eee7df; font-size: 16px; }
+.state { color: #8e857b; font-size: 12px; }
+.state-resolved { color: #5d875d; }.state-not_found, .state-failed { color: #b15548; }.state-ambiguous { color: #a47930; }
+#resolve-button { width: 100%; margin-top: 30px; padding: 13px 16px; border: 0; border-radius: 8px; background: #c8664c; color: white; font-weight: 700; cursor: pointer; }
+#resolve-button:hover:not(:disabled) { background: #ae543d; } #resolve-button:disabled { cursor: not-allowed; opacity: .6; }
+.status { min-height: 2.8em; margin: 16px 0 0; color: #766e66; font-size: 13px; line-height: 1.5; }.status.is-error { color: #b0443b; }
+.map-panel { position: relative; min-height: 62vh; }.map { position: absolute; inset: 0; }.map-message { position: absolute; inset: 50% auto auto 50%; transform: translate(-50%, -50%); width: min(420px, calc(100% - 48px)); padding: 18px; border-radius: 10px; background: #fffdf9; color: #9a3f36; box-shadow: 0 8px 30px #4c3c2b22; text-align: center; line-height: 1.5; }.info-window { max-width: 220px; padding: 2px 4px; color: #302b27; }.info-window p { margin: 7px 0 1px; color: #766e66; font-size: 13px; line-height: 1.45; }
+@media (max-width: 760px) { .app-shell { grid-template-columns: 1fr; grid-template-rows: auto minmax(420px, 55vh); }.panel { padding: 32px 24px; border-right: 0; border-bottom: 1px solid #e9e1d7; } .intro { margin-bottom: 28px; } }
