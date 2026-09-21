@@ -16,7 +16,7 @@ export class MapView {
     const AMap = window.AMap!;
     this.map.clearMap();
     const markers: AMapMarker[] = places.map((place) => {
-      const marker = new AMap.Marker({ position: [place.longitude, place.latitude], title: place.name });
+      const marker = new AMap.Marker({ position: [place.longitude, place.latitude], title: place.name, content: `<span class="map-type-marker">${markerIcon(place.type)}</span>`, offset: [-14, -28] });
       marker.setMap(this.map!);
       marker.on("click", () => {
         const detail = [place.category, ...(place.tips ?? [])].filter(Boolean).map((item) => `<p>${escapeHtml(item!)}</p>`).join("");
@@ -27,6 +27,10 @@ export class MapView {
     });
     if (markers.length > 0) this.map.setFitView(markers, false, [64, 64, 64, 64]);
   }
+}
+
+function markerIcon(type?: ResolvedPlace["type"]): string {
+  return ({ attraction: "🎡", food: "🍜", hotel: "🏨", transport: "🚄", other: "📍" })[type ?? "other"];
 }
 
 function escapeHtml(value: string): string {

@@ -15,7 +15,7 @@ export interface AMapPoi {
 
 export interface AMapNamespace {
   Map: new (container: string | HTMLElement, options?: object) => AMapMap;
-  Marker: new (options: { position: [number, number]; title?: string }) => AMapMarker;
+  Marker: new (options: { position: [number, number]; title?: string; content?: string; offset?: [number, number] }) => AMapMarker;
   InfoWindow: new (options: { content: string; offset?: [number, number] }) => AMapInfoWindow;
   PlaceSearch: new (options: { city: string; citylimit: boolean; pageSize: number }) => AMapPlaceSearch;
 }

@@ -1,15 +1,21 @@
 export type PoiStatus = "unresolved" | "resolved" | "ambiguous" | "not_found" | "failed";
 
 export type PlaceCategory = "景点" | "街区" | "餐饮" | "咖啡" | "商场" | "酒店" | "交通" | "其他";
+export type PlaceType = "attraction" | "food" | "hotel" | "transport" | "other";
+export type DurationSource = "user_content" | "model_estimate" | "unknown";
 
 export interface Place {
   id: string;
   rawName: string;
   poiStatus: PoiStatus;
   name?: string;
-  category?: PlaceCategory;
+  category?: string;
   source?: string;
   tips?: string[];
+  type?: PlaceType;
+  estimatedDurationMinutes?: number | null;
+  durationSource?: DurationSource;
+  durationEdited?: boolean;
   poiCandidates?: PoiCandidate[];
   poiId?: string;
   address?: string;
@@ -23,13 +29,15 @@ export interface PoiCandidate {
   longitude: number;
   latitude: number;
   poiId: string;
-  type?: string;
+  poiType?: string;
 }
 
 export interface ResolvedPlace extends PoiCandidate {
   status: "resolved";
-  category?: PlaceCategory;
+  category?: string;
   tips?: string[];
+  type?: PlaceType;
+  estimatedDurationMinutes?: number | null;
 }
 
 export type ResolvePlaceResult =
@@ -40,9 +48,12 @@ export type ResolvePlaceResult =
 
 export interface ExtractedPlace {
   name: string;
-  category: PlaceCategory;
-  source: "攻略文本";
+  type: PlaceType;
+  category?: string;
+  source: string;
   tips: string[];
+  estimatedDurationMinutes: number | null;
+  durationSource: DurationSource;
 }
 
 export interface ExtractionResult {

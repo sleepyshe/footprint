@@ -11,7 +11,7 @@ function asCandidate(poi: AMapPoi): PoiCandidate | undefined {
   const longitude = Number(poi.location?.lng);
   const latitude = Number(poi.location?.lat);
   if (!Number.isFinite(longitude) || !Number.isFinite(latitude)) return undefined;
-  return { poiId: poi.id, name: poi.name, address: poi.address || "暂无详细地址", longitude, latitude, type: poi.type };
+  return { poiId: poi.id, name: poi.name, address: poi.address || "暂无详细地址", longitude, latitude, poiType: poi.type };
 }
 
 function normalized(value: string): string {
