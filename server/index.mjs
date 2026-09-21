@@ -2,7 +2,7 @@ import http from "node:http";
 import { createServer as createViteServer, loadEnv } from "vite";
 import { extractTravelNotesPrompt } from "./ai/prompts/extract-travel-notes.mjs";
 const env = loadEnv("", process.cwd(), ""); const imageTypes = ["image/png", "image/jpeg", "image/webp"]; const durations = [30, 60, 90, 120, 180, 240, 480];
-function valid(x) { return x && typeof x === "object" && (x.city === null || typeof x.city === "string") && Array.isArray(x.places) && x.places.every((p) => p && typeof p.name === "string" && ["attraction", "food", "hotel", "transport", "other"].includes(p.type) && Array.isArray(p.tips) && p.tips.every((t) => typeof t === "string") && (p.estimatedDurationMinutes === null || durations.includes(p.estimatedDurationMinutes)) && ["user_content", "model_estimate", "unknown"].includes(p.durationSource)); }
+function valid(x) { return x && typeof x === "object" && (x.city === null || typeof x.city === "string") && Array.isArray(x.places) && x.places.every((p) => p && typeof p.name === "string" && ["attraction", "food", "hotel", "transport", "other"].includes(p.type) && Array.isArray(p.tips) && p.tips.every((t) => typeof t === "string") && (p.estimatedDurationMinutes === null || durations.includes(p.estimatedDurationMinutes)) && ["user_content", "model_estimate", "unknown"].includes(p.durationSource) && [1,2,3,4,5].includes(p.recommendationScore) && typeof p.recommendationReason === "string"); }
 async function extract({ text, images }) {
   if (!env.LLM_API_KEY) throw new Error("缺少 LLM_API_KEY，无法解析攻略。");
   if ((!text || !text.trim()) && !images.length) throw new Error("请粘贴攻略文本或上传截图。");

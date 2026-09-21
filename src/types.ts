@@ -3,6 +3,7 @@ export type PoiStatus = "unresolved" | "resolved" | "ambiguous" | "not_found" | 
 export type PlaceCategory = "景点" | "街区" | "餐饮" | "咖啡" | "商场" | "酒店" | "交通" | "其他";
 export type PlaceType = "attraction" | "food" | "hotel" | "transport" | "other";
 export type DurationSource = "user_content" | "model_estimate" | "unknown";
+export type RecommendationScore = 1 | 2 | 3 | 4 | 5;
 
 export interface Place {
   id: string;
@@ -16,6 +17,9 @@ export interface Place {
   estimatedDurationMinutes?: number | null;
   durationSource?: DurationSource;
   durationEdited?: boolean;
+  recommendationScore: RecommendationScore;
+  recommendationReason?: string;
+  mustVisit: boolean;
   poiCandidates?: PoiCandidate[];
   poiId?: string;
   address?: string;
@@ -54,6 +58,8 @@ export interface ExtractedPlace {
   tips: string[];
   estimatedDurationMinutes: number | null;
   durationSource: DurationSource;
+  recommendationScore: RecommendationScore;
+  recommendationReason?: string;
 }
 
 export interface ExtractionResult {
