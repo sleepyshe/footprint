@@ -66,3 +66,8 @@ export interface ExtractionResult {
   city: string | null;
   places: ExtractedPlace[];
 }
+
+export type Pace = "vacation" | "relaxed" | "flexible" | "compact" | "intense";
+export interface TripPreferences { tripDays: number | null; tripNights: number | null; durationMode: "user_selected" | "auto"; pace: Pace; }
+export interface DayGroup { day: number; placeIds: string[]; estimatedActivityMinutes: number; }
+export interface PlanningResult { inferredDays?: number; groups: DayGroup[]; hardToFitPlaceIds: string[]; warnings: string[]; }
