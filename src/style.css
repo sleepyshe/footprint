@@ -9,11 +9,14 @@ h1 { margin: 0; font-size: 36px; line-height: 1.2; letter-spacing: -.04em; }
 .intro { margin: 12px 0 42px; color: #766e66; font-size: 15px; }
 .field { display: flex; justify-content: space-between; padding: 13px 0; border-top: 1px solid #eee7df; border-bottom: 1px solid #eee7df; color: #766e66; font-size: 14px; }
 .field strong { color: #302b27; }
+.city-field input { width: 90px; border: 0; background: transparent; color: #302b27; font: inherit; font-weight: 700; text-align: right; outline: none; }
 .label { margin: 28px 0 12px; font-size: 13px; color: #766e66; }
+textarea { display: block; width: 100%; resize: vertical; border: 1px solid #e6ddd3; border-radius: 8px; padding: 12px; background: #fff; color: #302b27; font: inherit; font-size: 13px; line-height: 1.6; outline: none; } textarea:focus { border-color: #c8664c; }
 .place-list { padding: 0; margin: 0; list-style: none; }
 .place-list li { display: flex; align-items: center; justify-content: space-between; padding: 13px 0; border-bottom: 1px solid #eee7df; font-size: 16px; }
 .state { color: #8e857b; font-size: 12px; }
 .state-resolved { color: #5d875d; }.state-not_found, .state-failed { color: #b15548; }.state-ambiguous { color: #a47930; }
+.place-card { display: block !important; position: relative; }.place-card > div:first-child { display: flex; align-items: center; gap: 8px; }.place-card > .state { position: absolute; right: 0; top: 13px; }.place-card small:not(.state) { color: #8e857b; font-size: 11px; }.tips { margin: 8px 0 0; color: #766e66; font-size: 12px; line-height: 1.5; }.candidates { margin-top: 12px; padding: 10px; border-radius: 7px; background: #f8f3ec; }.candidates p { margin: 0 0 8px; color: #766e66; font-size: 12px; }.candidate { display: block; width: 100%; margin-top: 6px; padding: 8px; border: 1px solid #eadfd3; border-radius: 6px; background: #fffdf9; color: #302b27; cursor: pointer; text-align: left; }.candidate:hover { border-color: #c8664c; }.candidate strong, .candidate span { display: block; }.candidate span { margin-top: 3px; color: #766e66; font-size: 11px; }
 #resolve-button { width: 100%; margin-top: 30px; padding: 13px 16px; border: 0; border-radius: 8px; background: #c8664c; color: white; font-weight: 700; cursor: pointer; }
 #resolve-button:hover:not(:disabled) { background: #ae543d; } #resolve-button:disabled { cursor: not-allowed; opacity: .6; }
 .status { min-height: 2.8em; margin: 16px 0 0; color: #766e66; font-size: 13px; line-height: 1.5; }.status.is-error { color: #b0443b; }

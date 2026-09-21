@@ -19,7 +19,8 @@ export class MapView {
       const marker = new AMap.Marker({ position: [place.longitude, place.latitude], title: place.name });
       marker.setMap(this.map!);
       marker.on("click", () => {
-        const info = new AMap.InfoWindow({ content: `<div class="info-window"><strong>${escapeHtml(place.name)}</strong><p>${escapeHtml(place.address)}</p></div>`, offset: [0, -30] });
+        const detail = [place.category, ...(place.tips ?? [])].filter(Boolean).map((item) => `<p>${escapeHtml(item!)}</p>`).join("");
+        const info = new AMap.InfoWindow({ content: `<div class="info-window"><strong>${escapeHtml(place.name)}</strong><p>${escapeHtml(place.address)}</p>${detail}</div>`, offset: [0, -30] });
         info.open(this.map!, marker.getPosition());
       });
       return marker;

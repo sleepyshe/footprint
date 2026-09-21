@@ -10,6 +10,7 @@ export interface AMapPoi {
   name: string;
   address: string;
   location: { lng: number; lat: number };
+  type?: string;
 }
 
 export interface AMapNamespace {
