@@ -1,6 +1,8 @@
 import { loadAmap } from "./amap-loader";
 import type { AMapMap, AMapMarker } from "./amap-loader";
-import type { ResolvedPlace } from "./types";
+import type { DayRoute, ResolvedPlace } from "./types";
+
+const DAY_COLORS = ["#4176b9", "#5c9562", "#d18440", "#8064a8", "#3d8990"];
 
 export class MapView {
   private map: AMapMap | undefined;
@@ -11,10 +13,14 @@ export class MapView {
     this.map = new AMap.Map(container, { zoom: 11, viewMode: "2D" });
   }
 
-  showPlaces(places: ResolvedPlace[]): void {
+  showPlaces(places: ResolvedPlace[], routes: DayRoute[] = []): void {
     if (!this.map) throw new Error("地图尚未初始化");
     const AMap = window.AMap!;
     this.map.clearMap();
+    const polylines = routes.flatMap((dayRoute) => dayRoute.segments.filter((segment) => segment.status === "resolved" && segment.path.length > 1).map((segment) => {
+      const line = new AMap.Polyline({ path: segment.path.map((point) => [point.lng, point.lat]), strokeColor: DAY_COLORS[(dayRoute.day - 1) % DAY_COLORS.length], strokeWeight: 6, strokeOpacity: .82, lineJoin: "round" });
+      line.setMap(this.map!); return line;
+    }));
     const markers: AMapMarker[] = places.map((place) => {
       const marker = new AMap.Marker({ position: [place.longitude, place.latitude], title: place.name, content: createPlaceMarkerContent({ type: place.type }), offset: [-17, -34] });
       marker.setMap(this.map!);
@@ -25,7 +31,7 @@ export class MapView {
       });
       return marker;
     });
-    if (markers.length > 0) this.map.setFitView(markers, false, [64, 64, 64, 64]);
+    if (markers.length > 0) this.map.setFitView([...markers, ...polylines], false, [64, 64, 64, 64]);
   }
 }
 
