@@ -21,7 +21,7 @@ export interface AMapNamespace {
   Marker: new (options: { position: [number, number]; title?: string; content?: string; offset?: [number, number] }) => AMapMarker;
   Polyline: new (options: { path: [number, number][]; strokeColor: string; strokeWeight?: number; strokeOpacity?: number; strokeStyle?: "solid" | "dashed"; lineJoin?: string }) => AMapPolyline;
   InfoWindow: new (options: { content: string; offset?: [number, number] }) => AMapInfoWindow;
-  PlaceSearch: new (options: { city: string; citylimit: boolean; pageSize: number }) => AMapPlaceSearch;
+  PlaceSearch: new (options: { city: string; citylimit: boolean; pageSize: number; extensions?: "base" | "all" }) => AMapPlaceSearch;
   Walking: new (options?: object) => AMapRouteSearch;
   Transfer: new (options: { city: string; cityd?: string; policy?: number }) => AMapRouteSearch;
 }

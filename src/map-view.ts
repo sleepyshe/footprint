@@ -1,6 +1,6 @@
 import { loadAmap } from "./amap-loader";
 import type { AMapMap, AMapMarker } from "./amap-loader";
-import type { DayRoute, ResolvedPlace } from "./types";
+import type { DayRoute, ResolvedPlace, StayAreaCandidate } from "./types";
 import { getPlaceVisual, placeVisualIcon } from "./place-visual";
 
 const DAY_COLORS = ["#4176b9", "#5c9562", "#d18440", "#8064a8", "#3d8990"];
@@ -15,7 +15,7 @@ export class MapView {
     this.map = new AMap.Map(container, { zoom: 11, viewMode: "2D" });
   }
 
-  showPlaces(places: ResolvedPlace[], routes: DayRoute[] = [], options: { selectedDay?: number; selectedPlaceId?: string; focusDay?: number; onPlaceClick?: (placeId: string) => void } = {}): void {
+  showPlaces(places: ResolvedPlace[], routes: DayRoute[] = [], options: { selectedDay?: number; selectedPlaceId?: string; focusDay?: number; onPlaceClick?: (placeId: string) => void; stayAreas?: StayAreaCandidate[]; selectedStayAreaId?: string; selectedHotel?: ResolvedPlace } = {}): void {
     if (!this.map) throw new Error("地图尚未初始化");
     const AMap = window.AMap!;
     this.map.clearMap();
@@ -39,15 +39,30 @@ export class MapView {
       if (place.placeId === options.selectedPlaceId) this.openInfo(place, marker);
       return marker;
     });
+    const stayMarkers: AMapMarker[] = (options.stayAreas ?? []).map((area) => {
+      const active = area.anchorPoiId === options.selectedStayAreaId;
+      const marker = new AMap.Marker({ position: [area.longitude, area.latitude], title: area.anchorName, content: createPlaceMarkerContent({ type: "hotel", category: "酒店", isActive: active, label: area.anchorName }), offset: [-17, -34] });
+      marker.setMap(this.map!);
+      marker.on("click", () => new AMap.InfoWindow({ content: `<div class="info-window"><strong>🛏 ${escapeHtml(area.anchorName)}</strong><p>${escapeHtml(area.explanation)}</p><p>每日首尾通勤合计约 ${area.totalCommuteMinutes}min</p></div>`, offset: [0, -30] }).open(this.map!, marker.getPosition()));
+      return marker;
+    });
+    let hotelMarker: AMapMarker | undefined;
+    if (options.selectedHotel) {
+      const hotel = options.selectedHotel;
+      hotelMarker = new AMap.Marker({ position: [hotel.longitude, hotel.latitude], title: hotel.name, content: createPlaceMarkerContent({ type: "hotel", category: "酒店", isActive: true, label: hotel.name }), offset: [-17, -34] });
+      hotelMarker.setMap(this.map!);
+      hotelMarker.on("click", () => this.openInfo(hotel, hotelMarker!));
+    }
     const focused = options.focusDay ? routes.find((day) => day.day === options.focusDay) : undefined;
     if (focused) {
       const selectedLines = routeLines.filter((item) => item.day === focused.day).map((item) => item.line);
       const focusedMarkers = markers.filter((_, index) => focused.orderedPlaceIds.includes(places[index]?.placeId ?? ""));
       this.map.setFitView(selectedLines.length || focusedMarkers.length ? [...selectedLines, ...focusedMarkers] : markers, false, [64, 64, 64, 64]);
-    } else if (markers.length > 0) this.map.setFitView([...markers, ...polylines], false, [64, 64, 64, 64]);
+    } else if (markers.length > 0) this.map.setFitView([...markers, ...polylines, ...stayMarkers, ...(hotelMarker ? [hotelMarker] : [])], false, [64, 64, 64, 64]);
   }
 
   focusPlace(place: ResolvedPlace): void { if (!this.map) return; this.map.setCenter([place.longitude, place.latitude]); this.map.setZoom(15); }
+  focusStayArea(area: Pick<StayAreaCandidate, "longitude" | "latitude">): void { if (!this.map) return; this.map.setCenter([area.longitude, area.latitude]); this.map.setZoom(15); }
   private openInfo(place: ResolvedPlace, marker: AMapMarker): void { if (!this.map) return; const detail = [place.category, ...(place.tips ?? [])].filter(Boolean).map((item) => `<p>${escapeHtml(item!)}</p>`).join(""); new window.AMap!.InfoWindow({ content: `<div class="info-window"><strong>${escapeHtml(place.name)}</strong><p>${escapeHtml(place.address)}</p>${detail}</div>`, offset: [0, -30] }).open(this.map, marker.getPosition()); }
 }
 

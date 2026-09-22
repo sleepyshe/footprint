@@ -40,6 +40,16 @@ Evidence 在 extraction 时以原子化 `text/aspect/sentiment` 保留。相同�
 
 仅对真实通勤时间不少于 15 分钟的 segment 预检查餐饮。沿官方 path 忽略首尾并按 15–25/25–45/>45 分钟取 1/2/最多 3 个 anchor；每个 anchor 以 600m 搜餐饮、按 poiId 去重，并以候选到 polyline 的最小近似距离不超过 500m 粗筛。用户展开后才用真实高德路线计算 `A→R + R→B - A→B`，按绕路时间、评分、分类排序。均为产品 heuristic；session cache 随 path key 变化失效。
 
+## Phase 3D-2 Stay Area Recommendations
+
+住宿建议只在用户点击后生成，不会在页面加载、路线生成或拖拽后自动请求。候选搜索中心包含全部已安排地点的 overall centroid，以及每个 Day 的 centroid；centroid 仅用于在高德附近搜索真实地铁/轨道交通站，并不代表最终“最佳住宿点”。站点先按高德 `poiId` 去重，再以轻量站名归一合并可能的同站出入口。
+
+对所有真实站点，Haversine 空间距离只用作低成本粗筛：以候选站到每天首站、末站的距离总和保留前 7 个。最终评价只接受高德真实公共交通结果，逐日计算 `H → firstStop + lastStop → H`；任何一天首尾路线缺失的候选不进入最终结果。排序 score 为 `totalCommuteMinutes + 0.5 * maxDayCommuteMinutes`，用于同时偏好总通勤较短与最差一天不太差；系数、前 7、900m 区域多样性阈值均为 Product Heuristic，并非最优性证明。
+
+最终最多显示 3 个相距约 900m 以上的真实地铁站周边区域。说明文字从每一天的真实首尾通勤时间确定性生成，不使用 LLM。酒店仅在用户点击某一区域“查看酒店”后，以该交通锚点附近 850m 的真实高德 POI 搜索；同一区域本次会话缓存结果。排序优先离地铁近、再看高德 rating；`cost` 只作为“参考消费”展示，不视为实时房价或可订价格。
+
+酒店选择独立保存为 stay Place/Marker，不插入 DayRoute、不放入暂未安排，也不触发 C1/C2 重新规划。DayRoute 被拖拽、跨天移动、增删或重新生成后，只把推荐标为 stale，保留用户已选酒店，等待用户手动“重新推荐”。
+
 ## Phase 3C-2 Intra-day Routing
 
 日内问题是 open path：用户还没有提供酒店、起点或终点，因此不假设出发地，也不要求最后回到第一站。输入是 C1 的 `DayGroup.placeIds` 与每个已定位 Place 的坐标；输出是稳定的 `orderedPlaceIds` 和相邻真实 `RouteSegment`。

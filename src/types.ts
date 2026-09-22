@@ -140,3 +140,35 @@ export interface DayRoute {
   isUpdating?: boolean;
 }
 export interface RoutePlanningResult { days: DayRoute[]; warnings: string[]; }
+
+export interface StayHotelCandidate {
+  poiId: string;
+  name: string;
+  address: string;
+  longitude: number;
+  latitude: number;
+  category?: string;
+  rating?: number;
+  cost?: string;
+  distanceToAnchorMeters: number;
+}
+
+export interface StayAreaCandidate {
+  anchorPoiId: string;
+  anchorName: string;
+  longitude: number;
+  latitude: number;
+  totalCommuteMinutes: number;
+  maxDayCommuteMinutes: number;
+  perDayCommuteMinutes: Array<{ day: number; minutes: number }>;
+  explanation: string;
+  hotels?: StayHotelCandidate[];
+  hotelStatus?: "idle" | "loading" | "ready" | "error";
+}
+
+export interface StayRecommendationState {
+  routeVersion?: string;
+  status: "idle" | "loading" | "ready" | "error";
+  areas: StayAreaCandidate[];
+  stale: boolean;
+}
