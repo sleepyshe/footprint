@@ -1,6 +1,7 @@
 import { loadAmap } from "./amap-loader";
 import type { AMapMap, AMapMarker } from "./amap-loader";
 import type { DayRoute, ResolvedPlace } from "./types";
+import { getPlaceVisual, placeVisualIcon } from "./place-visual";
 
 const DAY_COLORS = ["#4176b9", "#5c9562", "#d18440", "#8064a8", "#3d8990"];
 const DEFAULT_LABEL_LIMIT = 8;
@@ -29,7 +30,7 @@ export class MapView {
     const markers: AMapMarker[] = places.map((place) => {
       const isActive = place.placeId === options.selectedPlaceId || (Boolean(options.selectedDay) && dayByPlace.get(place.placeId ?? "") === options.selectedDay);
       const showLabel = labels.has(place.placeId) || isActive;
-      const marker = new AMap.Marker({ position: [place.longitude, place.latitude], title: place.name, content: createPlaceMarkerContent({ type: place.type, isActive, label: showLabel ? place.name : undefined }), offset: [-17, -34] });
+      const marker = new AMap.Marker({ position: [place.longitude, place.latitude], title: place.name, content: createPlaceMarkerContent({ type: place.type, category: place.category, isActive, label: showLabel ? place.name : undefined }), offset: [-17, -34] });
       marker.setMap(this.map!);
       marker.on("click", () => {
         this.openInfo(place, marker);
@@ -50,13 +51,14 @@ export class MapView {
   private openInfo(place: ResolvedPlace, marker: AMapMarker): void { if (!this.map) return; const detail = [place.category, ...(place.tips ?? [])].filter(Boolean).map((item) => `<p>${escapeHtml(item!)}</p>`).join(""); new window.AMap!.InfoWindow({ content: `<div class="info-window"><strong>${escapeHtml(place.name)}</strong><p>${escapeHtml(place.address)}</p>${detail}</div>`, offset: [0, -30] }).open(this.map, marker.getPosition()); }
 }
 
-interface MarkerOptions { type?: ResolvedPlace["type"]; dayColor?: string; isActive?: boolean; label?: string; }
+interface MarkerOptions { type?: ResolvedPlace["type"]; category?: string; dayColor?: string; isActive?: boolean; label?: string; }
 
-function createPlaceMarkerContent({ type = "other", dayColor, isActive = false, label }: MarkerOptions): string {
-  const icon = ({ attraction: "⌂", food: "✦", hotel: "▣", transport: "➜", other: "●" })[type];
+function createPlaceMarkerContent({ type = "other", category, dayColor, isActive = false, label }: MarkerOptions): string {
+  const visual = getPlaceVisual({ type, category });
+  const icon = placeVisualIcon[visual];
   const dayStyle = dayColor ? ` style="--day-color:${dayColor}"` : "";
   const labelText = label && label.length > 10 ? `${label.slice(0, 10)}…` : label;
-  return `<span class="map-marker-wrap${isActive ? " is-active" : ""}"><span class="map-type-marker marker-${type}"${dayStyle}><span>${icon}</span></span>${labelText ? `<span class="map-place-label" title="${escapeHtml(label!)}">${escapeHtml(labelText)}</span>` : ""}</span>`;
+  return `<span class="map-marker-wrap${isActive ? " is-active" : ""}"><span class="map-type-marker marker-${visual}"${dayStyle}><span>${icon}</span></span>${labelText ? `<span class="map-place-label" title="${escapeHtml(label!)}">${escapeHtml(labelText)}</span>` : ""}</span>`;
 }
 
 function escapeHtml(value: string): string {

@@ -11,6 +11,9 @@ export interface AMapPoi {
   address: string;
   location: { lng: number; lat: number };
   type?: string;
+  typecode?: string;
+  rating?: string;
+  biz_ext?: { rating?: string; cost?: string };
 }
 
 export interface AMapNamespace {
@@ -45,6 +48,7 @@ export interface AMapInfoWindow {
 
 export interface AMapPlaceSearch {
   search(keyword: string, callback: (status: string, result: { poiList?: { pois?: AMapPoi[] } }) => void): void;
+  searchNearBy(keyword: string, center: [number, number], radius: number, callback: (status: string, result: { poiList?: { pois?: AMapPoi[] } }) => void): void;
 }
 export interface AMapRouteSearch {
   search(origin: [number, number], destination: [number, number], callback: (status: string, result: unknown) => void): void;

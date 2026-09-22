@@ -36,6 +36,10 @@ Evidence 在 extraction 时以原子化 `text/aspect/sentiment` 保留。相同�
 
 `unassignedPlaceIds` 是仍在旅行地点池、但不属于任何 Day 的真实 POI。用户移动优先于自动 planner：手动 Day assignment 写入 `manualDayOverride`，手动排序写入 `orderSource: manual`。移动后只按当前顺序重算受影响 Day 的真实 RouteSegments，不运行 C1 分组或 C2 NN/2-opt。手动添加地点没有 evidence，默认停留 60 分钟、`durationSource: default`，仅为容量显示的占位值；超容量只提示，不自动移动地点。
 
+## Phase 3D-1 Along-route Food Suggestions
+
+仅对真实通勤时间不少于 15 分钟的 segment 预检查餐饮。沿官方 path 忽略首尾并按 15–25/25–45/>45 分钟取 1/2/最多 3 个 anchor；每个 anchor 以 600m 搜餐饮、按 poiId 去重，并以候选到 polyline 的最小近似距离不超过 500m 粗筛。用户展开后才用真实高德路线计算 `A→R + R→B - A→B`，按绕路时间、评分、分类排序。均为产品 heuristic；session cache 随 path key 变化失效。
+
 ## Phase 3C-2 Intra-day Routing
 
 日内问题是 open path：用户还没有提供酒店、起点或终点，因此不假设出发地，也不要求最后回到第一站。输入是 C1 的 `DayGroup.placeIds` 与每个已定位 Place 的坐标；输出是稳定的 `orderedPlaceIds` 和相邻真实 `RouteSegment`。
