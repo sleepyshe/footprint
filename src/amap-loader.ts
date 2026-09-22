@@ -27,6 +27,8 @@ export interface AMapMap {
   clearMap(): void;
   setFitView(overlays?: (AMapMarker | AMapPolyline)[], immediately?: boolean, avoid?: number[]): void;
   destroy(): void;
+  setCenter(center: [number, number]): void;
+  setZoom(zoom: number): void;
 }
 
 export interface AMapMarker {

@@ -57,7 +57,12 @@ export async function planRoutes(groups: DayGroup[], places: Place[], city: stri
         if (resolved.status === "failed") warnings.push(`${from.rawName} → ${to.rawName} 路线暂时无法获取。`);
         if (resolved.status === "resolved" && !resolved.path.length) warnings.push(`${from.rawName} → ${to.rawName} 未返回可绘制的路线几何。`);
         segments.push({ fromPlaceId: from.id, toPlaceId: to.id, transportMode, ...resolved });
-      } catch { segments.push({ fromPlaceId: from.id, toPlaceId: to.id, transportMode, status: "failed", distanceMeters: null, durationMinutes: null, path: [] }); warnings.push(`${from.rawName} → ${to.rawName} 路线暂时无法获取。`); }
+      } catch (error) {
+        const diagnostic = { fromName: from.name ?? from.rawName, toName: to.name ?? to.rawName, origin: point(from), destination: point(to), transportMode, amapMessage: error instanceof Error ? error.message : String(error), decision: "resolveRoute 抛出了未处理异常，计划层将其判定为 failed。" };
+        console.warn("[AMap route failed]", JSON.stringify({ routeFailureReason: "unknown", ...diagnostic }));
+        segments.push({ fromPlaceId: from.id, toPlaceId: to.id, transportMode, status: "failed", distanceMeters: null, durationMinutes: null, path: [], routeFailureReason: "unknown", diagnostic });
+        warnings.push(`${from.rawName} → ${to.rawName} 路线暂时无法获取。`);
+      }
     }
     const totals = segments.map((segment) => segment.durationMinutes);
     const totalTransitMinutes = totals.every((value) => value !== null) ? totals.reduce((sum, value) => sum + (value ?? 0), 0) : null;

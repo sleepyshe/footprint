@@ -20,7 +20,8 @@ function normalized(value: string): string {
 
 /** Resolves a user-intended place through AMap; it never invents coordinates. */
 export async function resolvePlace({ city, name }: ResolvePlaceInput): Promise<ResolvePlaceResult> {
-  try {
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
     const AMap = await loadAmap();
     const candidates = await new Promise<PoiCandidate[]>((resolve, reject) => {
       const search = new AMap.PlaceSearch({ city, citylimit: true, pageSize: 10 });
@@ -44,8 +45,12 @@ export async function resolvePlace({ city, name }: ResolvePlaceInput): Promise<R
     if (closeMatches.length > 1) return { status: "ambiguous", candidates: closeMatches.slice(0, 3) };
     if (candidates.length > 0) return { status: "ambiguous", candidates };
     return { status: "not_found" };
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "高德 POI 搜索请求失败";
-    return message === "未找到匹配地点" ? { status: "not_found" } : { status: "failed", message };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "高德 POI 搜索请求失败";
+      if (message === "未找到匹配地点") return { status: "not_found" };
+      if (attempt === 0) { await new Promise((resolve) => window.setTimeout(resolve, 300)); continue; }
+      return { status: "failed", message };
+    }
   }
+  return { status: "failed", message: "高德 POI 搜索请求失败" };
 }

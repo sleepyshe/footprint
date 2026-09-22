@@ -3,7 +3,13 @@ import { createServer as createViteServer, loadEnv } from "vite";
 import { extractTravelNotesPrompt } from "./ai/prompts/extract-travel-notes.mjs";
 const env = loadEnv("", process.cwd(), ""); const imageTypes = ["image/png", "image/jpeg", "image/webp"]; const durations = [30, 60, 90, 120, 180, 240, 480]; const placeTypes = ["attraction", "food", "hotel", "transport", "other"]; const durationSources = ["user_content", "model_estimate", "unknown"];
 function valid(x) { return x && typeof x === "object" && (x.city === null || typeof x.city === "string") && Array.isArray(x.places) && x.places.every((p) => p && typeof p.name === "string" && placeTypes.includes(p.type) && Array.isArray(p.tips) && p.tips.every((t) => typeof t === "string") && (p.estimatedDurationMinutes === null || durations.includes(p.estimatedDurationMinutes)) && durationSources.includes(p.durationSource) && [1,2,3,4,5].includes(p.recommendationScore) && typeof p.recommendationReason === "string"); }
-function parseModelJson(content) { const trimmed = String(content ?? "").trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, ""); return JSON.parse(trimmed); }
+function parseModelJson(content) {
+  const raw = (Array.isArray(content) ? content.map((item) => typeof item === "string" ? item : item?.text ?? "").join("") : String(content ?? "")).trim();
+  const trimmed = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
+  const start = trimmed.indexOf("{"), end = trimmed.lastIndexOf("}");
+  if (start < 0 || end < start) throw new Error("模型未返回 JSON 对象");
+  return JSON.parse(trimmed.slice(start, end + 1));
+}
 /** Accept harmless model formatting variation without inventing geography or recommendation facts. */
 function normalizeModelResult(value) {
   if (!value || typeof value !== "object" || !Array.isArray(value.places)) return null;

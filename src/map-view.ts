@@ -3,6 +3,7 @@ import type { AMapMap, AMapMarker } from "./amap-loader";
 import type { DayRoute, ResolvedPlace } from "./types";
 
 const DAY_COLORS = ["#4176b9", "#5c9562", "#d18440", "#8064a8", "#3d8990"];
+const DEFAULT_LABEL_LIMIT = 8;
 
 export class MapView {
   private map: AMapMap | undefined;
@@ -13,34 +14,49 @@ export class MapView {
     this.map = new AMap.Map(container, { zoom: 11, viewMode: "2D" });
   }
 
-  showPlaces(places: ResolvedPlace[], routes: DayRoute[] = []): void {
+  showPlaces(places: ResolvedPlace[], routes: DayRoute[] = [], options: { selectedDay?: number; selectedPlaceId?: string; focusDay?: number; onPlaceClick?: (placeId: string) => void } = {}): void {
     if (!this.map) throw new Error("地图尚未初始化");
     const AMap = window.AMap!;
     this.map.clearMap();
-    const polylines = routes.flatMap((dayRoute) => dayRoute.segments.filter((segment) => segment.status === "resolved" && segment.path.length > 1).map((segment) => {
-      const line = new AMap.Polyline({ path: segment.path.map((point) => [point.lng, point.lat]), strokeColor: DAY_COLORS[(dayRoute.day - 1) % DAY_COLORS.length], strokeWeight: 6, strokeOpacity: .82, lineJoin: "round" });
-      line.setMap(this.map!); return line;
+    const dayByPlace = new Map(routes.flatMap((day) => day.orderedPlaceIds.map((id) => [id, day.day] as const)));
+    const labels = new Set([...places].sort((a, b) => Number(b.placeId === options.selectedPlaceId) - Number(a.placeId === options.selectedPlaceId) || Number(b.mustVisit) - Number(a.mustVisit) || (b.recommendationScore ?? 0) - (a.recommendationScore ?? 0)).slice(0, places.length <= DEFAULT_LABEL_LIMIT ? places.length : DEFAULT_LABEL_LIMIT).map((place) => place.placeId));
+    const routeLines = routes.flatMap((dayRoute) => dayRoute.segments.filter((segment) => segment.status === "resolved" && segment.path.length > 1).map((segment) => {
+      const isSelected = !options.selectedDay || options.selectedDay === dayRoute.day;
+      const line = new AMap.Polyline({ path: segment.path.map((point) => [point.lng, point.lat]), strokeColor: DAY_COLORS[(dayRoute.day - 1) % DAY_COLORS.length], strokeWeight: isSelected ? 6 : 4, strokeOpacity: isSelected ? .86 : .2, lineJoin: "round" });
+      line.setMap(this.map!); return { day: dayRoute.day, line };
     }));
+    const polylines = routeLines.map(({ line }) => line);
     const markers: AMapMarker[] = places.map((place) => {
-      const marker = new AMap.Marker({ position: [place.longitude, place.latitude], title: place.name, content: createPlaceMarkerContent({ type: place.type }), offset: [-17, -34] });
+      const isActive = place.placeId === options.selectedPlaceId || (Boolean(options.selectedDay) && dayByPlace.get(place.placeId ?? "") === options.selectedDay);
+      const showLabel = labels.has(place.placeId) || isActive;
+      const marker = new AMap.Marker({ position: [place.longitude, place.latitude], title: place.name, content: createPlaceMarkerContent({ type: place.type, isActive, label: showLabel ? place.name : undefined }), offset: [-17, -34] });
       marker.setMap(this.map!);
       marker.on("click", () => {
-        const detail = [place.category, ...(place.tips ?? [])].filter(Boolean).map((item) => `<p>${escapeHtml(item!)}</p>`).join("");
-        const info = new AMap.InfoWindow({ content: `<div class="info-window"><strong>${escapeHtml(place.name)}</strong><p>${escapeHtml(place.address)}</p>${detail}</div>`, offset: [0, -30] });
-        info.open(this.map!, marker.getPosition());
+        this.openInfo(place, marker);
+        if (place.placeId) options.onPlaceClick?.(place.placeId);
       });
+      if (place.placeId === options.selectedPlaceId) this.openInfo(place, marker);
       return marker;
     });
-    if (markers.length > 0) this.map.setFitView([...markers, ...polylines], false, [64, 64, 64, 64]);
+    const focused = options.focusDay ? routes.find((day) => day.day === options.focusDay) : undefined;
+    if (focused) {
+      const selectedLines = routeLines.filter((item) => item.day === focused.day).map((item) => item.line);
+      const focusedMarkers = markers.filter((_, index) => focused.orderedPlaceIds.includes(places[index]?.placeId ?? ""));
+      this.map.setFitView(selectedLines.length || focusedMarkers.length ? [...selectedLines, ...focusedMarkers] : markers, false, [64, 64, 64, 64]);
+    } else if (markers.length > 0) this.map.setFitView([...markers, ...polylines], false, [64, 64, 64, 64]);
   }
+
+  focusPlace(place: ResolvedPlace): void { if (!this.map) return; this.map.setCenter([place.longitude, place.latitude]); this.map.setZoom(15); }
+  private openInfo(place: ResolvedPlace, marker: AMapMarker): void { if (!this.map) return; const detail = [place.category, ...(place.tips ?? [])].filter(Boolean).map((item) => `<p>${escapeHtml(item!)}</p>`).join(""); new window.AMap!.InfoWindow({ content: `<div class="info-window"><strong>${escapeHtml(place.name)}</strong><p>${escapeHtml(place.address)}</p>${detail}</div>`, offset: [0, -30] }).open(this.map, marker.getPosition()); }
 }
 
-interface MarkerOptions { type?: ResolvedPlace["type"]; dayColor?: string; isActive?: boolean; }
+interface MarkerOptions { type?: ResolvedPlace["type"]; dayColor?: string; isActive?: boolean; label?: string; }
 
-function createPlaceMarkerContent({ type = "other", dayColor, isActive = false }: MarkerOptions): string {
+function createPlaceMarkerContent({ type = "other", dayColor, isActive = false, label }: MarkerOptions): string {
   const icon = ({ attraction: "⌂", food: "✦", hotel: "▣", transport: "➜", other: "●" })[type];
   const dayStyle = dayColor ? ` style="--day-color:${dayColor}"` : "";
-  return `<span class="map-type-marker marker-${type}${isActive ? " is-active" : ""}"${dayStyle}><span>${icon}</span></span>`;
+  const labelText = label && label.length > 10 ? `${label.slice(0, 10)}…` : label;
+  return `<span class="map-marker-wrap${isActive ? " is-active" : ""}"><span class="map-type-marker marker-${type}"${dayStyle}><span>${icon}</span></span>${labelText ? `<span class="map-place-label" title="${escapeHtml(label!)}">${escapeHtml(labelText)}</span>` : ""}</span>`;
 }
 
 function escapeHtml(value: string): string {

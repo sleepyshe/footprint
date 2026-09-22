@@ -38,10 +38,13 @@ export interface PoiCandidate {
 
 export interface ResolvedPlace extends PoiCandidate {
   status: "resolved";
+  placeId?: string;
   category?: string;
   tips?: string[];
   type?: PlaceType;
   estimatedDurationMinutes?: number | null;
+  recommendationScore?: RecommendationScore;
+  mustVisit?: boolean;
 }
 
 export type ResolvePlaceResult =
@@ -74,6 +77,24 @@ export interface PlanningResult { inferredDays?: number; groups: DayGroup[]; har
 
 export type TransportMode = "walking" | "transit";
 export interface RoutePoint { lng: number; lat: number; }
+export type RouteFailureReason = "api_error" | "no_route" | "invalid_input" | "parse_error" | "service_unavailable" | "unknown";
+/**
+ * Developer-facing AMap callback snapshot. It is deliberately kept on failed
+ * segments so that the UI can stay simple while a real route failure remains
+ * inspectable in the browser console and application state.
+ */
+export interface RouteDiagnostic {
+  fromName: string;
+  toName: string;
+  origin: RoutePoint | null;
+  destination: RoutePoint | null;
+  transportMode: TransportMode;
+  amapStatus?: string;
+  amapMessage?: string;
+  amapInfo?: string;
+  rawResult?: unknown;
+  decision: string;
+}
 export interface RouteSegment {
   fromPlaceId: string;
   toPlaceId: string;
@@ -83,6 +104,8 @@ export interface RouteSegment {
   /** Only geometry returned by AMap route services is kept here. */
   path: RoutePoint[];
   status: "resolved" | "failed";
+  routeFailureReason?: RouteFailureReason;
+  diagnostic?: RouteDiagnostic;
 }
 export interface DayRoute {
   day: number;
