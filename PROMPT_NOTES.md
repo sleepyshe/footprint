@@ -18,4 +18,12 @@
 
 种草指数：只根据攻略表达给 1–5 星；信息不足为 3 星，禁止使用外部旅游知识。理由最多一句，说明原文态度。
 
-当前版本：v5。
+当前版本：v6。新增 `evidence[]`：每条是用户输入中关于该地点的原子化信息（`text`、`aspect`、`sentiment`），只保留明确支持的内容；不记录 sourceId 或“第几篇攻略”，因为多张截图没有可靠文章边界。
+
+## summarize-place-guides
+
+作用：在生成行程后，一次性将当前 active canonical Place 的 evidence 压缩为地点可执行摘要。
+
+输入：多个 `{ placeId, name, evidence[] }`；输出每个地点的 `oneLineSummary`、`repeatedPoints`、`practicalTips`、`conflicts`。
+
+约束：严格只根据同一地点的 evidence；不得使用外部旅游知识。`repeatedPoints` 必须由至少两条不同 evidence 语义支持；`conflicts` 只表达同 topic 的真实分歧，不制造冲突。失败时不影响路线，Stop 回退显示既有 tips。当前版本：v1，使用单次 batch 调用。

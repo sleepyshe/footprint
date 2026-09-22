@@ -1,9 +1,22 @@
-import type { DurationSource, ExtractionResult, ExtractedPlace, PlaceType } from "./types";
+import type { DurationSource, EvidenceAspect, EvidenceSentiment, ExtractionResult, ExtractedPlace, PlaceEvidence, PlaceType } from "./types";
 export class ExtractionError extends Error {}
 export interface ImageInput { mimeType: string; data: string; }
 const types: PlaceType[] = ["attraction", "food", "hotel", "transport", "other"];
-const sources: DurationSource[] = ["user_content", "model_estimate", "unknown"];
+const sources: DurationSource[] = ["user_content", "model_estimate", "default", "unknown"];
 const durations = [30, 60, 90, 120, 180, 240, 480];
+const aspects: EvidenceAspect[] = ["timing", "duration", "route", "photo", "queue", "cost", "reservation", "experience", "other"];
+const sentiments: EvidenceSentiment[] = ["positive", "neutral", "negative"];
+function parseEvidence(value: unknown): PlaceEvidence[] {
+  if (!Array.isArray(value)) return [];
+  const seen = new Set<string>();
+  return value.flatMap((item) => {
+    const evidence = item as Record<string, unknown>;
+    const text = typeof evidence?.text === "string" ? evidence.text.trim() : "";
+    if (!text || seen.has(text)) return [];
+    seen.add(text);
+    return [{ text, aspect: aspects.includes(evidence.aspect as EvidenceAspect) ? evidence.aspect as EvidenceAspect : "other", sentiment: sentiments.includes(evidence.sentiment as EvidenceSentiment) ? evidence.sentiment as EvidenceSentiment : "neutral" }];
+  });
+}
 function parseExtraction(value: unknown): ExtractionResult {
   if (!value || typeof value !== "object") throw new ExtractionError("模型没有返回有效的地点数据。");
   const data = value as { city?: unknown; places?: unknown };
@@ -15,7 +28,7 @@ function parseExtraction(value: unknown): ExtractionResult {
     const duration = p.estimatedDurationMinutes === null ? null : Number(p.estimatedDurationMinutes);
     if (duration !== null && !durations.includes(duration)) throw new ExtractionError("模型返回了不允许的停留时长。");
     if (![1, 2, 3, 4, 5].includes(Number(p.recommendationScore))) throw new ExtractionError("模型返回的种草指数不正确。");
-    return { name: p.name.trim(), type: p.type as PlaceType, category: typeof p.category === "string" ? p.category.trim() : undefined, source: typeof p.source === "string" ? p.source : "攻略输入", tips: p.tips.map((tip) => tip.trim()).filter(Boolean).slice(0, 2), estimatedDurationMinutes: duration, durationSource: p.durationSource as DurationSource, recommendationScore: Number(p.recommendationScore) as 1 | 2 | 3 | 4 | 5, recommendationReason: typeof p.recommendationReason === "string" ? p.recommendationReason.trim() : undefined };
+    return { name: p.name.trim(), type: p.type as PlaceType, category: typeof p.category === "string" ? p.category.trim() : undefined, source: typeof p.source === "string" ? p.source : "攻略输入", tips: p.tips.map((tip) => tip.trim()).filter(Boolean).slice(0, 2), evidence: parseEvidence(p.evidence), estimatedDurationMinutes: duration, durationSource: p.durationSource as DurationSource, recommendationScore: Number(p.recommendationScore) as 1 | 2 | 3 | 4 | 5, recommendationReason: typeof p.recommendationReason === "string" ? p.recommendationReason.trim() : undefined };
   });
   return { city: typeof data.city === "string" && data.city.trim() ? data.city.trim() : null, places };
 }

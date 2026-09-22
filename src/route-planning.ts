@@ -42,6 +42,14 @@ export function orderDayPlaces(placeIds: string[], places: Place[]): string[] {
 }
 export function transportModeFor(a: Place, b: Place): TransportMode { return haversineMeters(point(a), point(b)) <= WALKING_THRESHOLD_METERS ? "walking" : "transit"; }
 export type ResolveRoute = (from: Place, to: Place, mode: TransportMode, city: string) => Promise<Omit<RouteSegment, "fromPlaceId" | "toPlaceId" | "transportMode">>;
+/** Rebuilds a user-specified Day order without calling NN or 2-opt. */
+export async function rebuildManualDay(day: number, orderedPlaceIds: string[], places: Place[], city: string, resolveRoute: ResolveRoute): Promise<DayRoute> {
+  const lookup = new Map(places.filter((place) => place.poiStatus === "resolved" && place.latitude !== undefined && place.longitude !== undefined).map((place) => [place.id, place]));
+  const ids = orderedPlaceIds.filter((id) => lookup.has(id)); const segments: RouteSegment[] = []; const warnings: string[] = [];
+  for (let i = 1; i < ids.length; i++) { const from = lookup.get(ids[i - 1])!, to = lookup.get(ids[i])!, transportMode = transportModeFor(from, to); const result = await resolveRoute(from, to, transportMode, city); if (result.status === "failed") warnings.push(`${from.rawName} → ${to.rawName} 路线暂时无法获取。`); segments.push({ fromPlaceId: from.id, toPlaceId: to.id, transportMode, ...result }); }
+  const durations = segments.map((segment) => segment.durationMinutes); const totalTransitMinutes = durations.every((value) => value !== null) ? durations.reduce((total, value) => total + (value ?? 0), 0) : null;
+  return { day, placeIds: [...ids], orderedPlaceIds: ids, segments, totalActivityMinutes: ids.reduce((sum, id) => sum + (lookup.get(id)?.estimatedDurationMinutes ?? 60), 0), totalTransitMinutes, warnings, orderSource: "manual" };
+}
 export async function planRoutes(groups: DayGroup[], places: Place[], city: string, resolveRoute: ResolveRoute): Promise<RoutePlanningResult> {
   const lookup = new Map(places.filter((place) => place.poiStatus === "resolved" && place.latitude !== undefined && place.longitude !== undefined).map((place) => [place.id, place]));
   const days: DayRoute[] = [];

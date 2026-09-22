@@ -2,8 +2,26 @@ export type PoiStatus = "unresolved" | "resolved" | "ambiguous" | "not_found" | 
 
 export type PlaceCategory = "景点" | "街区" | "餐饮" | "咖啡" | "商场" | "酒店" | "交通" | "其他";
 export type PlaceType = "attraction" | "food" | "hotel" | "transport" | "other";
-export type DurationSource = "user_content" | "model_estimate" | "unknown";
+export type DurationSource = "user_content" | "model_estimate" | "default" | "unknown";
 export type RecommendationScore = 1 | 2 | 3 | 4 | 5;
+export type EvidenceAspect = "timing" | "duration" | "route" | "photo" | "queue" | "cost" | "reservation" | "experience" | "other";
+export type EvidenceSentiment = "positive" | "neutral" | "negative";
+
+/** A single atomic statement grounded in the user's imported material. */
+export interface PlaceEvidence {
+  text: string;
+  aspect: EvidenceAspect;
+  sentiment: EvidenceSentiment;
+}
+
+/** Derived from evidence only; it never replaces the original evidence. */
+export interface PlaceGuideSummary {
+  placeId: string;
+  oneLineSummary: string | null;
+  repeatedPoints: string[];
+  practicalTips: string[];
+  conflicts: Array<{ topic: string; viewpoints: string[] }>;
+}
 
 export interface Place {
   id: string;
@@ -13,6 +31,7 @@ export interface Place {
   category?: string;
   source?: string;
   tips?: string[];
+  evidence?: PlaceEvidence[];
   type?: PlaceType;
   estimatedDurationMinutes?: number | null;
   durationSource?: DurationSource;
@@ -20,6 +39,7 @@ export interface Place {
   recommendationScore: RecommendationScore;
   recommendationReason?: string;
   mustVisit: boolean;
+  manualDayOverride?: number | null;
   poiCandidates?: PoiCandidate[];
   poiId?: string;
   address?: string;
@@ -59,6 +79,7 @@ export interface ExtractedPlace {
   category?: string;
   source: string;
   tips: string[];
+  evidence: PlaceEvidence[];
   estimatedDurationMinutes: number | null;
   durationSource: DurationSource;
   recommendationScore: RecommendationScore;
@@ -115,5 +136,7 @@ export interface DayRoute {
   totalActivityMinutes: number;
   totalTransitMinutes: number | null;
   warnings: string[];
+  orderSource?: "auto" | "manual";
+  isUpdating?: boolean;
 }
 export interface RoutePlanningResult { days: DayRoute[]; warnings: string[]; }

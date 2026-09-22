@@ -1,12 +1,19 @@
-import type { DurationSource, Place, PlaceType } from "./types";
+import type { DurationSource, Place, PlaceEvidence, PlaceType } from "./types";
 
-const durationRank: Record<DurationSource, number> = { unknown: 0, model_estimate: 1, user_content: 2 };
+const durationRank: Record<DurationSource, number> = { unknown: 0, default: 0, model_estimate: 1, user_content: 2 };
 
 function mergedTips(places: Place[]): string[] {
   const seen = new Set<string>();
   return places.flatMap((place) => place.tips ?? []).map((tip) => tip.trim()).filter((tip) => {
     if (!tip || seen.has(tip)) return false;
     seen.add(tip); return true;
+  });
+}
+function mergedEvidence(places: Place[]): PlaceEvidence[] {
+  const seen = new Set<string>();
+  return places.flatMap((place) => place.evidence ?? []).map((evidence) => ({ ...evidence, text: evidence.text.trim() })).filter((evidence) => {
+    if (!evidence.text || seen.has(evidence.text)) return false;
+    seen.add(evidence.text); return true;
   });
 }
 
@@ -38,6 +45,7 @@ export function dedupeResolvedPlaces(input: Place[]): { places: Place[]; warning
     places.push({
       ...canonical,
       tips: mergedTips(duplicates),
+      evidence: mergedEvidence(duplicates),
       mustVisit: duplicates.some((item) => item.mustVisit),
       recommendationScore: top.recommendationScore,
       recommendationReason: top.recommendationReason || canonical.recommendationReason,

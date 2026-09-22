@@ -6,6 +6,18 @@ export interface ResolvePlaceInput {
   city: string;
   name: string;
 }
+/** Real AMap keyword search for the manual-place picker; no LLM is involved. */
+export async function searchPoiCandidates({ city, keyword }: { city: string; keyword: string }): Promise<PoiCandidate[]> {
+  const AMap = await loadAmap();
+  return new Promise((resolve, reject) => {
+    const search = new AMap.PlaceSearch({ city, citylimit: Boolean(city.trim()), pageSize: 8 });
+    search.search(keyword.trim(), (status, result) => {
+      if (status === "no_data") return resolve([]);
+      if (status !== "complete") return reject(new Error("高德 POI 搜索请求失败"));
+      resolve((result.poiList?.pois ?? []).map(asCandidate).filter((item): item is PoiCandidate => Boolean(item)).slice(0, 8));
+    });
+  });
+}
 
 function asCandidate(poi: AMapPoi): PoiCandidate | undefined {
   const longitude = Number(poi.location?.lng);

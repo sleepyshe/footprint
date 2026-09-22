@@ -28,6 +28,14 @@
 
 本阶段不记录 source/article/mention count：当前一次多图输入不是可验证的多篇攻略结构，不能诚实地作来源统计。
 
+## Phase 3C-4 Evidence Merge
+
+Evidence 在 extraction 时以原子化 `text/aspect/sentiment` 保留。相同真实 `poiId` 合并时，将 evidence trim 后仅按完全相同 text 去重；不做语义去重、重复观点判断或冲突判断。后两者由 batch summary prompt 完成，且 evidence 不参与 Day 分组、排序或路线规划。
+
+## Phase 3D-0 Manual Itinerary Overrides
+
+`unassignedPlaceIds` 是仍在旅行地点池、但不属于任何 Day 的真实 POI。用户移动优先于自动 planner：手动 Day assignment 写入 `manualDayOverride`，手动排序写入 `orderSource: manual`。移动后只按当前顺序重算受影响 Day 的真实 RouteSegments，不运行 C1 分组或 C2 NN/2-opt。手动添加地点没有 evidence，默认停留 60 分钟、`durationSource: default`，仅为容量显示的占位值；超容量只提示，不自动移动地点。
+
 ## Phase 3C-2 Intra-day Routing
 
 日内问题是 open path：用户还没有提供酒店、起点或终点，因此不假设出发地，也不要求最后回到第一站。输入是 C1 的 `DayGroup.placeIds` 与每个已定位 Place 的坐标；输出是稳定的 `orderedPlaceIds` 和相邻真实 `RouteSegment`。
